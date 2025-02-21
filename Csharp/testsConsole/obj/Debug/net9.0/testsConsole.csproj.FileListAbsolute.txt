@@ -1,0 +1,14 @@
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\bin\Debug\net9.0\testsConsole.exe
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\bin\Debug\net9.0\testsConsole.deps.json
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\bin\Debug\net9.0\testsConsole.runtimeconfig.json
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\bin\Debug\net9.0\testsConsole.dll
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\bin\Debug\net9.0\testsConsole.pdb
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\obj\Debug\net9.0\testsConsole.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\obj\Debug\net9.0\testsConsole.AssemblyInfoInputs.cache
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\obj\Debug\net9.0\testsConsole.AssemblyInfo.cs
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\obj\Debug\net9.0\testsConsole.csproj.CoreCompileInputs.cache
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\obj\Debug\net9.0\testsConsole.dll
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\obj\Debug\net9.0\refint\testsConsole.dll
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\obj\Debug\net9.0\testsConsole.pdb
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\obj\Debug\net9.0\testsConsole.genruntimeconfig.cache
+C:\Users\lilia\Projects\CsharpProjects\testsConsole\obj\Debug\net9.0\ref\testsConsole.dll
