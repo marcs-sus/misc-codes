@@ -42,12 +42,29 @@ Begin
     End;
 End;
 
-// Binary search
-Function BinarySearch(list:List; last: Integer; value: Integer): Integer;
+// Binary search with recursion
+Function BinarySearchRecursive(Const arr: Array Of Integer; low, high, target: Integer): Integer;
+
 Var 
-  low, high, mid: Integer;
+  mid: Integer;
 Begin
-  
+  If low > high Then
+    BinarySearchRecursive := -1
+  Else
+    Begin
+      mid := (low + high) Div 2;
+      If (arr[mid] = target) Then
+        BinarySearchRecursive := mid
+      Else If arr[mid] < target Then
+             BinarySearchRecursive := BinarySearchRecursive(arr, mid + 1, high, target)
+      Else
+        BinarySearchRecursive := BinarySearchRecursive(arr, low, mid - 1, target);
+    End;
+End;
+
+Function BinarySearch(Const arr: Array Of Integer; n, target: Integer): Integer;
+Begin
+  BinarySearch := BinarySearchRecursive(arr, 0, n - 1, target);
 End;
 
 // Insert an element into the list
@@ -78,10 +95,10 @@ Begin
 End;
 
 // Remove an element from the list
-Procedure Remove(Var list: List; Var last: Integer; max: Integer);
+Procedure Remove(Var list: List; Var last: Integer; max: Integer; input: Integer);
 
 Var 
-  i: Integer;
+  i, pos: Integer;
 Begin
   If IsEmpty(last) Then
     Begin
@@ -89,7 +106,21 @@ Begin
     End
   Else
     Begin
-      
+      writeln('Enter the element to remove: ');
+      readln(input);
+
+      pos := BinarySearch(list, last, input);
+      If pos = -1 Then
+        writeln('Element not found!')
+      Else
+        Begin
+          For i := pos + 1 To last - 1 Do
+            Begin
+              list[i] := list[i + 1];
+            End;
+
+          last := last - 1;
+        End;
     End;
 End;
 
@@ -178,7 +209,7 @@ Begin
     // Switch case for each operation
     Case OpMode Of 
       1: Insert(myList, listLast, ListMax, userInputInt);
-      2: Remove(myList, listLast, ListMax);
+      2: Remove(myList, listLast, ListMax, userInputInt);
       3: Consult(myList, ListMax, userInputInt);
       4: WriteList(myList, listLast, ListMax);
       0: writeln('Exiting...');
