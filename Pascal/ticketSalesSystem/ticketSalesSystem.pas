@@ -2,7 +2,12 @@
 Program TicketSalesSystem;
 
 Uses crt;
-{ Simulate a ticket sales system that sells tickets for a soccer match championship }
+
+{ Simulates a ticket sales system that sells tickets for a soccer match championship }
+// Supports three types of costumers: members, fans, and visitors
+// Supports two types of accommodations: covered stands and general stands
+// Seat assignment is based on costumer type priority
+// Revenue is tracked based on stated ticket prices
 
 
 { ===== Constants ===== }
@@ -121,7 +126,7 @@ Begin
   SoldMembers := 0;
 End;
 
-{ ===== Search Algorithms ===== }
+{ ===== Binary Search Algorithm ===== }
 Function BinarySearchRecursive(Const arr: SeatListType; low, high, target: Integer): Integer;
 
 Var 
@@ -147,6 +152,8 @@ Begin
 End;
 
 { ===== Data Structure Manipulation ===== }
+
+{ Queue operations }
 Procedure Enqueue(Var queue: CostumerQueueType; Var rear: Integer; costumer: CostumerRecordType);
 Begin
   If rear >= MAX_QUEUE Then
@@ -183,6 +190,7 @@ Begin
     End;
 End;
 
+{ Stack operations }
 Procedure Push(Var stack: TicketStackType; Var top: Integer; number: Integer);
 Begin
   If top >= MAX_STACK Then
@@ -212,6 +220,7 @@ Begin
     End;
 End;
 
+{ List operations }
 Procedure Insert(Var list: SeatListType; Var count: Integer; value: Integer);
 Begin
   If count >= MAX_LIST Then
@@ -260,6 +269,8 @@ Begin
 End;
 
 { ===== System processing ===== }
+
+{ Costumer entry by type }
 Procedure CostumerEntry();
 
 Var 
@@ -267,10 +278,12 @@ Var
   costumer: CostumerRecordType;
 Begin
   clrscr;
+
   writeln('--- Costumer Entry ---');
   writeln('Enter the costumer type (M - Member, F - Fan, V - Visitor): ');
   write('Choice: ');
 
+  // Read costumer type and assign it to the costumer
   readln(costumerType);
   Case costumerType Of 
     'M', 'm':
@@ -296,50 +309,48 @@ Begin
   End;
 End;
 
-Function AssignSeat(isCovered: Boolean; Var seatList: SeatListType; Var seatCount: Integer;
-                    Var seatAvailable: SeatAvailabilityType; capacity: integer): Integer;
+{ Assign a seat to a costumer }
+Function AssignSeat(Var seatList: SeatListType; Var seatCount: Integer;
+                    Var availableSeats: SeatAvailabilityType; capacity: integer): Integer;
 
 Var 
   i, seatNumber: Integer;
   validSeat: Boolean;
 Begin
-  writeln('Available seats: ');
-  For i := 1 To capacity Do
-    If seatAvailable[i] Then
-      write(i, ' ');
-  writeln;
+  // Optional: Display available seats
+  { writeln('Available seats: ');
+  For i := 1 To seatCount Do
+    write(i, ' ');
+  writeln; }
 
+  // Get seat number chosen and validate it
   Repeat
     validSeat := False;
     write('Choose a seat number: ');
-
     readln(seatNumber);
-    If (seatNumber >= 1) And (seatNumber <= capacity) Then
-      Begin
-        If seatAvailable[seatNumber] Then
-          validSeat := True
-        Else
-          writeln('Seat ', seatNumber, ' is not available!');
-      End
+
+    If BinarySearch(seatList, seatCount, seatNumber) <> -1 Then
+      validSeat := True
     Else
-      Begin
-        writeln('Invalid seat number!');
-      End;
+      writeln('Invalid or unavailable seat number!');
   Until (validSeat);
 
-  seatAvailable[seatNumber] := False;
-  AssignSeat := seatNumber;
+  AssignSeat := Remove(seatList, seatCount, seatNumber);
+  availableSeats[seatNumber] := False;
 End;
 
+{ Process ticket sales with priority }
 Procedure ProcessTicketSales();
 
 Var 
   ticketID, seatNumber: Integer;
   costumer: CostumerRecordType;
   accommodationType: char;
+  validChoice: Boolean;
 Begin
   clrscr;
 
+  // Process member queue
   While (MemberQueueRear > 0) And (SoldCovered < COVERED_CAPACITY) And (SoldMembers < MEMBER_LIMIT) Do
     Begin
       costumer := Dequeue(MemberQueue, MemberQueueRear);
@@ -352,53 +363,73 @@ Begin
           RevenueCoveredMembers := RevenueCoveredMembers + PRICE_COVERED_MEMBER;
           writeln('Member purchase ticket ', ticketID, ' for covered stands');
 
-          seatNumber := AssignSeat(True, CoveredSeatList, CoveredSeatListCount, CoveredSeatsAvailable, COVERED_CAPACITY);
+          seatNumber := AssignSeat(CoveredSeatList, CoveredSeatListCount, CoveredSeatsAvailable, COVERED_CAPACITY);
           writeln('Assigned seat: ', seatNumber);
         End;
       writeln;
     End;
 
+  // Process fan queue
   While (FanQueueRear > 0) And ((SoldCovered < COVERED_CAPACITY) Or (SoldGeneral < GENERAL_CAPACITY)) Do
     Begin
       costumer := Dequeue(FanQueue, FanQueueRear);
 
-      writeln('Fan wants to purchase which ticket? (C - Covered, G - General)');
-      write('Choice: ');
+      // Get accommodation type choice from the fan
+      Repeat
+        writeln('Fan, choose your ticket type: (C - Covered, G - General)');
+        write('Choice: ');
+        readln(accommodationType);
 
-      readln(accommodationType);
+        Case accommodationType Of 
+          'C', 'c', 'G', 'g': validChoice := True;
+          Else
+            Begin
+              writeln('Invalid choice!');
+              validChoice := False;
+            End;
+        End;
+      Until (validChoice);
+
+      // Assign a accommodation type to the fan
       Case accommodationType Of 
         'C', 'c':
-                  If SoldCovered < COVERED_CAPACITY Then
-                    Begin
-                      ticketID := Pop(CoveredTicketStack, CoveredTicketStackTop);
-                      costumer.Accommodation := Covered;
-                      SoldCovered := SoldCovered + 1;
-                      RevenueCoveredFans := RevenueCoveredFans + PRICE_COVERED_FAN;
-                      writeln('Fan purchase ticket ', ticketID, ' for covered stands');
+                  Begin
+                    If SoldCovered < COVERED_CAPACITY Then
+                      Begin
+                        ticketID := Pop(CoveredTicketStack, CoveredTicketStackTop);
+                        costumer.Accommodation := Covered;
+                        SoldCovered := SoldCovered + 1;
+                        RevenueCoveredFans := RevenueCoveredFans + PRICE_COVERED_FAN;
+                        writeln('Fan purchase ticket ', ticketID, ' for covered stands');
 
-                      seatNumber := AssignSeat(True, CoveredSeatList, CoveredSeatListCount, CoveredSeatsAvailable, COVERED_CAPACITY);
-                      writeln('Assigned seat: ', seatNumber);
-                    End;
+                        seatNumber := AssignSeat(CoveredSeatList, CoveredSeatListCount, CoveredSeatsAvailable, COVERED_CAPACITY);
+                        writeln('Assigned seat: ', seatNumber);
+                      End
+                    Else
+                      writeln('Covered stands are full!');
+                  End;
         'G', 'g':
-                  If SoldGeneral < GENERAL_CAPACITY Then
-                    Begin
-                      If GeneralTicketStackTop > 0 Then
-                        Begin
-                          ticketID := Pop(GeneralTicketStack, GeneralTicketStackTop);
-                          SoldGeneral := SoldGeneral + 1;
-                          RevenueGeneralFans := RevenueGeneralFans + PRICE_GENERAL_FAN;
-                          writeln('Fan purchase ticket ', ticketID, ' for general stands');
+                  Begin
+                    If SoldGeneral < GENERAL_CAPACITY Then
+                      Begin
+                        ticketID := Pop(GeneralTicketStack, GeneralTicketStackTop);
+                        SoldGeneral := SoldGeneral + 1;
+                        RevenueGeneralFans := RevenueGeneralFans + PRICE_GENERAL_FAN;
+                        writeln('Fan purchase ticket ', ticketID, ' for general stands');
 
-                          seatNumber := AssignSeat(True, GeneralSeatList, GeneralSeatListCount, GeneralSeatsAvailable, GENERAL_CAPACITY);
-                          writeln('Assigned seat: ', seatNumber);
-                        End;
-                    End;
+                        seatNumber := AssignSeat(GeneralSeatList, GeneralSeatListCount, GeneralSeatsAvailable, GENERAL_CAPACITY);
+                        writeln('Assigned seat: ', seatNumber);
+                      End
+                    Else
+                      writeln('General stands are full!');
+                  End;
         Else
           writeln('Invalid choice!');
       End;
       writeln;
     End;
 
+  // Process visitor queue
   While (VisitorQueueRear > 0) And (SoldGeneral < GENERAL_CAPACITY) And (SoldGeneralVisitors < GENERAL_VISITOR_CAPACITY) Do
     Begin
       costumer := Dequeue(VisitorQueue, VisitorQueueRear);
@@ -411,7 +442,7 @@ Begin
           RevenueGeneralVisitors := RevenueGeneralVisitors + PRICE_GENERAL_VISITOR;
           writeln('Visitor purchase ticket ', ticketID, ' for general stands');
 
-          seatNumber := AssignSeat(True, GeneralSeatList, GeneralSeatListCount, GeneralSeatsAvailable, GENERAL_CAPACITY);
+          seatNumber := AssignSeat(GeneralSeatList, GeneralSeatListCount, GeneralSeatsAvailable, GENERAL_CAPACITY);
           writeln('Assigned seat: ', seatNumber);
         End;
       writeln;
@@ -421,6 +452,8 @@ Begin
 End;
 
 { ===== Displays ===== }
+
+{ Display revenue summary }
 Procedure DisplayRevenue();
 Begin
   clrscr;
@@ -434,6 +467,7 @@ Begin
   readkey;
 End;
 
+{ Main system menu }
 Procedure MainMenu();
 
 Var 
@@ -442,6 +476,7 @@ Begin
   Repeat
     clrscr;
 
+    // Display main menu options
     writeln('===== Ticket Sales System =====');
     writeln('1 - Enter Costumer');
     writeln('2 - Process Ticket Sales');
@@ -451,6 +486,7 @@ Begin
     write('Option: ');
     readln(option);
 
+    // Process user option
     Case option Of 
       1: CostumerEntry();
       2: ProcessTicketSales();
