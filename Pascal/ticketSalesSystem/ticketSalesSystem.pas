@@ -36,18 +36,11 @@ Const
 Type 
   // Costumer types and record
   CostumerType = (Member, Fan, Visitor);
-  AccommodationType = (Covered, General);
-  CostumerRecordType = Record
-    CostumerType: CostumerType;
-    Accommodation: AccommodationType;
-  End;
 
   // Data structures types
-  CostumerQueueType = Array[1..MAX_QUEUE] Of CostumerRecordType;
+  CostumerQueueType = Array[1..MAX_QUEUE] Of CostumerType;
   TicketStackType = Array[1..MAX_STACK] Of Integer;
   SeatListType = Array[1..MAX_LIST] Of Integer;
-
-  // Seat availability type
   SeatAvailabilityType = Array[1..MAX_LIST] Of Boolean;
 
 
@@ -74,7 +67,7 @@ Var
 
   // Capacity counters
   SoldCovered, SoldGeneral: Integer;
-  SoldGeneralVisitors, SoldMembers: Integer;
+  SoldMembers, SoldVisitors: Integer;
 
 
 { ===== System Initialization ===== }
@@ -122,7 +115,7 @@ Begin
   TotalRevenue := 0;
   SoldCovered := 0;
   SoldGeneral := 0;
-  SoldGeneralVisitors := 0;
+  SoldVisitors := 0;
   SoldMembers := 0;
 End;
 
@@ -154,7 +147,7 @@ End;
 { ===== Data Structure Manipulation ===== }
 
 { Queue operations }
-Procedure Enqueue(Var queue: CostumerQueueType; Var rear: Integer; costumer: CostumerRecordType);
+Procedure Enqueue(Var queue: CostumerQueueType; Var rear: Integer; costumer: CostumerType);
 Begin
   If rear >= MAX_QUEUE Then
     writeln('Queue is full!')
@@ -165,18 +158,18 @@ Begin
     End;
 End;
 
-Function Dequeue(Var queue: CostumerQueueType; Var rear: Integer): CostumerRecordType;
+Function Dequeue(Var queue: CostumerQueueType; Var rear: Integer): CostumerType;
 
 Var 
   i: integer;
-  costumer: CostumerRecordType;
+  costumer: CostumerType;
 Begin
   If rear = 0 Then
     Begin
       writeln('Queue is empty!');
 
-      costumer.CostumerType := Fan;
-      costumer.Accommodation := General;
+      // Return a dummy costumer
+      costumer := Fan;
       Dequeue := costumer;
     End
   Else
@@ -274,8 +267,8 @@ End;
 Procedure CostumerEntry();
 
 Var 
-  costumerType: char;
-  costumer: CostumerRecordType;
+  costumer: CostumerType;
+  input: char;
 Begin
   clrscr;
 
@@ -284,23 +277,23 @@ Begin
   write('Choice: ');
 
   // Read costumer type and assign it to the costumer
-  readln(costumerType);
-  Case costumerType Of 
+  readln(input);
+  Case input Of 
     'M', 'm':
               Begin
-                costumer.CostumerType := Member;
+                costumer := Member;
                 Enqueue(MemberQueue, MemberQueueRear, costumer);
                 writeln('Member entered the queue');
               End;
     'F', 'f':
               Begin
-                costumer.CostumerType := Fan;
+                costumer := Fan;
                 Enqueue(FanQueue, FanQueueRear, costumer);
                 writeln('Fan entered the queue');
               End;
     'V', 'v':
               Begin
-                costumer.CostumerType := Visitor;
+                costumer := Visitor;
                 Enqueue(VisitorQueue, VisitorQueueRear, costumer);
                 writeln('Visitor entered the queue');
               End;
@@ -314,7 +307,7 @@ Function AssignSeat(Var seatList: SeatListType; Var seatCount: Integer;
                     Var availableSeats: SeatAvailabilityType; capacity: integer): Integer;
 
 Var 
-  i, seatNumber: Integer;
+  seatNumber: Integer;
   validSeat: Boolean;
 Begin
   // Optional: Display available seats
@@ -344,8 +337,7 @@ Procedure ProcessTicketSales();
 
 Var 
   ticketID, seatNumber: Integer;
-  costumer: CostumerRecordType;
-  accommodationType: char;
+  accommodationChoice: char;
   validChoice: Boolean;
 Begin
   clrscr;
@@ -353,7 +345,7 @@ Begin
   // Process member queue
   While (MemberQueueRear > 0) And (SoldCovered < COVERED_CAPACITY) And (SoldMembers < MEMBER_LIMIT) Do
     Begin
-      costumer := Dequeue(MemberQueue, MemberQueueRear);
+      Dequeue(MemberQueue, MemberQueueRear);
 
       If CoveredTicketStackTop > 0 Then
         Begin
@@ -372,15 +364,15 @@ Begin
   // Process fan queue
   While (FanQueueRear > 0) And ((SoldCovered < COVERED_CAPACITY) Or (SoldGeneral < GENERAL_CAPACITY)) Do
     Begin
-      costumer := Dequeue(FanQueue, FanQueueRear);
+      Dequeue(FanQueue, FanQueueRear);
 
       // Get accommodation type choice from the fan
       Repeat
         writeln('Fan, choose your ticket type: (C - Covered, G - General)');
         write('Choice: ');
-        readln(accommodationType);
+        readln(accommodationChoice);
 
-        Case accommodationType Of 
+        Case accommodationChoice Of 
           'C', 'c', 'G', 'g': validChoice := True;
           Else
             Begin
@@ -391,13 +383,12 @@ Begin
       Until (validChoice);
 
       // Assign a accommodation type to the fan
-      Case accommodationType Of 
+      Case accommodationChoice Of 
         'C', 'c':
                   Begin
                     If SoldCovered < COVERED_CAPACITY Then
                       Begin
                         ticketID := Pop(CoveredTicketStack, CoveredTicketStackTop);
-                        costumer.Accommodation := Covered;
                         SoldCovered := SoldCovered + 1;
                         RevenueCoveredFans := RevenueCoveredFans + PRICE_COVERED_FAN;
                         writeln('Fan purchase ticket ', ticketID, ' for covered stands');
@@ -430,15 +421,15 @@ Begin
     End;
 
   // Process visitor queue
-  While (VisitorQueueRear > 0) And (SoldGeneral < GENERAL_CAPACITY) And (SoldGeneralVisitors < GENERAL_VISITOR_CAPACITY) Do
+  While (VisitorQueueRear > 0) And (SoldGeneral < GENERAL_CAPACITY) And (SoldVisitors < GENERAL_VISITOR_CAPACITY) Do
     Begin
-      costumer := Dequeue(VisitorQueue, VisitorQueueRear);
+      Dequeue(VisitorQueue, VisitorQueueRear);
 
       If GeneralTicketStackTop > 0 Then
         Begin
           ticketID := Pop(GeneralTicketStack, GeneralTicketStackTop);
           SoldGeneral := SoldGeneral + 1;
-          SoldGeneralVisitors := SoldGeneralVisitors + 1;
+          SoldVisitors := SoldVisitors + 1;
           RevenueGeneralVisitors := RevenueGeneralVisitors + PRICE_GENERAL_VISITOR;
           writeln('Visitor purchase ticket ', ticketID, ' for general stands');
 
@@ -464,7 +455,6 @@ Begin
   writeln('General stands (Visitors): R$ ', RevenueGeneralVisitors:0:2);
   TotalRevenue := RevenueCoveredMembers + RevenueCoveredFans + RevenueGeneralFans + RevenueGeneralVisitors;
   writeln('Total Revenue: R$ ', TotalRevenue:0:2);
-  readkey;
 End;
 
 { Main system menu }
