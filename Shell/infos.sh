@@ -1,5 +1,5 @@
 #!/bin/bash
-# Small information display in the terminal
+# Quick information display in the terminal
 
 # Get terminal width (fallback to 80 if tput fails)
 term_width=$(tput cols 2>/dev/null)
