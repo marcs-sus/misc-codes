@@ -82,7 +82,7 @@ Begin
   readln(input);
 
   If input > QUEUE_MAX Then
-    writeln('Invalid position!');
+    writeln('Invalid position!')
   Else
     writeln('Element in position ', input, ' ==> ', queue.arr[input]);
 End;

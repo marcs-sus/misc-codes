@@ -1,2 +1,7 @@
+# Linux system files
+.directory
+
+# IDE files
 .vscode/
 .vs/
+
