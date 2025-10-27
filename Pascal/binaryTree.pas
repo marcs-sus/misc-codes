@@ -20,6 +20,11 @@ Type
     Size: Integer;
   End;
 
+  LevelRecord = Record
+    Node: TreeNodePtr;
+    Level: Integer;
+  End;
+
 Var 
   myTree: TreeType;
   input: Integer;
@@ -48,27 +53,59 @@ Begin
     End;
 End;
 
+// Get the height of the binary tree
+Function GetHeight(node: TreeNodePtr): Integer;
+
+Var 
+  leftHeight, rightHeight: Integer;
+Begin
+  If node = Nil Then
+    GetHeight := -1
+  Else
+    Begin
+      leftHeight := GetHeight(node^.Left);
+      rightHeight := GetHeight(node^.Right);
+      If leftHeight > rightHeight Then
+        GetHeight := leftHeight + 1
+      Else
+        GetHeight := rightHeight + 1;
+    End;
+End;
+
+// Check if the binary tree is full
+Function IsTreeFull(node: TreeNodePtr): Boolean;
+Begin
+  If node = Nil Then
+    IsTreeFull := True
+  Else If (node^.Left = Nil) And (node^.Right = Nil) Then
+         IsTreeFull := True
+  Else If (node^.Left <> Nil) And (node^.Right <> Nil) Then
+         IsTreeFull := IsTreeFull(node^.Left) And IsTreeFull(node^.Right)
+  Else
+    IsTreeFull := False;
+End;
+
 // Insert a new node into the binary tree
 Procedure Insert(Var root: TreeNodePtr; input: Integer);
 Begin
   If myTree.Size >= TREE_MAX Then
+    writeln('Tree is full (max ', TREE_MAX, ')!')
+  Else
     Begin
-      writeln('Tree is full (max ', TREE_MAX, ').');
-      Exit;
-    End;
-  If root = Nil Then
-    Begin
-      New(root);
-      root^.Value := input;
-      root^.Left := Nil;
-      root^.Right := Nil;
+      If root = Nil Then
+        Begin
+          New(root);
+          root^.Value := input;
+          root^.Left := Nil;
+          root^.Right := Nil;
 
-      myTree.Size := myTree.Size + 1;
-    End
-  Else If input < root^.Value Then
-         Insert(root^.Left, input)
-  Else If input > root^.Value Then
-         Insert(root^.Right, input)
+          myTree.Size := myTree.Size + 1;
+        End
+      Else If input < root^.Value Then
+             Insert(root^.Left, input)
+      Else If input > root^.Value Then
+             Insert(root^.Right, input)
+    End;
 End;
 
 // Remove a node from the binary tree
@@ -144,30 +181,91 @@ Begin
     End;
 End;
 
-// Display the entire tree
-Procedure DisplayTree(node: TreeNodePtr; level: Integer);
+// Write the tree in level-order
+Procedure LevelOrder(node: TreeNodePtr);
+
+Var 
+  levelQueue: array[1..TREE_MAX * 2] Of LevelRecord;
+  front, rear: Integer;
+  currentNode: TreeNodePtr;
+  currentLevel: Integer;
 Begin
-  If node = Nil Then
-    Exit;
-
-  // Print the current node
-  WriteLn(node^.Value);
-
-  // Print left child (if exists)
-  If node^.Left <> Nil Then
+  If node <> Nil Then
     Begin
-      Write(StringOfChar(' ', level * 2), 'L: ');
-      DisplayTree(node^.Left, level + 1);
-    End;
+      front := 1;
+      rear := 1;
 
-  // Print right child (if exists)
-  If node^.Right <> Nil Then
-    Begin
-      Write(StringOfChar(' ', level * 2), 'R: ');
-      DisplayTree(node^.Right, level + 1);
+      levelQueue[1].Node := node;
+      levelQueue[1].Level := 0;
+
+      While front <= rear Do
+        Begin
+          currentNode := levelQueue[front].Node;
+          currentLevel := levelQueue[front].Level;
+          front := front + 1;
+
+          WriteLn('Node ', currentNode^.Value, ' at level ', currentLevel);
+
+          If currentNode^.Left <> Nil Then
+            Begin
+              levelQueue[rear + 1].Node := currentNode^.Left;
+              levelQueue[rear + 1].Level := currentLevel + 1;
+              rear := rear + 1;
+            End;
+
+          If currentNode^.Right <> Nil Then
+            Begin
+              levelQueue[rear + 1].Node := currentNode^.Right;
+              levelQueue[rear + 1].Level := currentLevel + 1;
+              rear := rear + 1;
+            End;
+        End;
     End;
 End;
 
+// Search for a node in the binary tree
+Procedure SearchNode(node: TreeNodePtr; input: Integer; level: Integer);
+Begin
+  If node = Nil Then
+    writeln('Value ', input, ' not found in the tree.')
+  Else
+    Begin
+      If node^.Value = input Then
+        Begin
+          writeln('Value ', input, ' found in the tree.');
+          writeln('Node Level: ', level);
+        End
+      Else
+        If input < node^.Value Then
+          SearchNode(node^.Left, input, level + 1)
+      Else
+        SearchNode(node^.Right, input, level + 1);
+    End;
+End;
+
+// Display the entire tree
+Procedure DisplayTree(node: TreeNodePtr; level: Integer);
+Begin
+  If node <> Nil Then
+    Begin
+      // Print the current node
+      WriteLn(node^.Value);
+
+      // Print left child (if exists)
+      If node^.Left <> Nil Then
+        Begin
+          Write(StringOfChar(' ', level * 2), 'L: ');
+          DisplayTree(node^.Left, level + 1);
+        End;
+
+      // Print right child (if exists)
+      If node^.Right <> Nil Then
+        Begin
+          Write(StringOfChar(' ', level * 2), 'R: ');
+          DisplayTree(node^.Right, level + 1);
+        End;
+    End;
+End;
 
 // Display the leaf nodes of the tree
 Procedure DisplayLeaves(node: TreeNodePtr);
@@ -182,7 +280,7 @@ Begin
 End;
 
 // Generate a random tree seed
-Procedure RandomSeed(max: Integer);
+Procedure GenerateRandomTree(max: Integer);
 
 Var 
   i, nodeCount, value: Integer;
@@ -205,7 +303,7 @@ Begin
   Init();
 
   // Generate random tree nodes
-  RandomSeed(6);
+  GenerateRandomTree(6);
 
   Repeat
     clrscr;
@@ -221,8 +319,12 @@ Begin
     Writeln('3. Pre-Order Traversal');
     Writeln('4. In-Order Traversal');
     Writeln('5. Post-Order Traversal');
-    Writeln('6. Display Tree');
-    Writeln('7. Display Leaf Nodes');
+    Writeln('6. Level-Order Traversal');
+    Writeln('7. Get Height of Tree');
+    Writeln('8. Search for an element');
+    Writeln('9. Display Tree');
+    Writeln('10. Display Leaf Nodes');
+    Writeln('11. Check if Tree is Full');
     Writeln('0. Exit');
     Writeln;
     Writeln('Current tree size: ', myTree.Size, '/', TREE_MAX);
@@ -246,8 +348,29 @@ Begin
       3: PreOrder(myTree.Root);
       4: InOrder(myTree.Root);
       5: PostOrder(myTree.Root);
-      6: DisplayTree(myTree.Root, 1);
-      7: DisplayLeaves(myTree.Root);
+      6: LevelOrder(myTree.Root);
+      7:
+         Begin
+           If GetHeight(myTree.Root) = -1 Then
+             writeln('Tree is empty. Height is undefined.')
+           Else
+             writeln('Tree height: ', GetHeight(myTree.Root));
+         End;
+      8:
+         Begin
+           writeln('Enter a value to search for: ');
+           readln(input);
+           SearchNode(myTree.Root, input, 0);
+         End;
+      9: DisplayTree(myTree.Root, 1);
+      10: DisplayLeaves(myTree.Root);
+      11:
+          Begin
+            If IsTreeFull(myTree.Root) Then
+              writeln('The tree is full.')
+            Else
+              writeln('The tree is NOT full.');
+          End;
       0: writeln('Exiting...');
       Else writeln('Invalid option. Please try again.');
     End;
